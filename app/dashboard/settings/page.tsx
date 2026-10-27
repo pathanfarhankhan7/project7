@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, Mail, Shield, Crown, Bell, Download, Trash2, Loader2, Save } from 'lucide-react';
+import { User, Mail, Shield, Crown, Bell, Download, Trash2, Loader2, Save, KeyRound, SunMoon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 import type { Subscription, UserPlan } from '@/lib/types';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function SettingsPage() {
   const { user, profile, refreshProfile, signOut } = useAuth();
@@ -24,6 +25,10 @@ export default function SettingsPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [analysisCount, setAnalysisCount] = useState(0);
   const [reportCount, setReportCount] = useState(0);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   useEffect(() => {
     setFullName(profile?.full_name || '');
@@ -68,6 +73,37 @@ export default function SettingsPage() {
     } else {
       await refreshProfile();
       toast.success('Profile updated');
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    setPasswordSaving(true);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user?.email || '',
+      password: currentPassword,
+    });
+    if (signInError) {
+      setPasswordSaving(false);
+      toast.error('Current password is incorrect');
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPasswordSaving(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      toast.success('Password changed successfully');
     }
   };
 
@@ -157,6 +193,28 @@ export default function SettingsPage() {
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                 Save Changes
               </Button>
+
+              <div className="border-t border-border pt-6 space-y-4">
+                <div>
+                  <h3 className="text-base font-semibold flex items-center gap-2"><KeyRound className="w-4 h-4 text-primary" /> Change Password</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Update the password you use to sign in.</p>
+                </div>
+                <Input type="password" placeholder="Current password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                <Input type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={6} />
+                <Input type="password" placeholder="Confirm new password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} minLength={6} />
+                <Button variant="outline" onClick={handleChangePassword} disabled={passwordSaving || !currentPassword || !newPassword || !confirmPassword}>
+                  {passwordSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
+                  Change Password
+                </Button>
+              </div>
+
+              <div className="border-t border-border pt-6 flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-semibold flex items-center gap-2"><SunMoon className="w-4 h-4 text-primary" /> Appearance</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Switch between light and dark mode.</p>
+                </div>
+                <ThemeToggle />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
