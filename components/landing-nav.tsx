@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Shield, Menu, X, Brain, LineChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth-context';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
@@ -47,6 +48,7 @@ export function LandingNav() {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
           {user ? (
             <Link href="/dashboard">
               <Button size="sm">Go to Dashboard</Button>
@@ -88,6 +90,10 @@ export function LandingNav() {
             FAQ
           </Link>
           <div className="pt-3 border-t border-border flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Appearance</span>
+              <ThemeToggle />
+            </div>
             {user ? (
               <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
                 <Button size="sm" className="w-full">Go to Dashboard</Button>
